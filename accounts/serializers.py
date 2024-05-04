@@ -12,3 +12,11 @@ class  UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return  CustUser.objects.create_user(**validated_data) 
+
+
+
+
+class FoodImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FoodImage
+        fields = ['image', 'predicted_food', 'calories_data', 'predicted_volume']

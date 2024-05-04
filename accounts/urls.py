@@ -5,5 +5,5 @@ from .views import *
 urlpatterns = [
     path("signup/",UserCreationView.as_view(),name="signup"),
     path('login/',CustomAuthToken.as_view(),name="log"),
-    path('checkcalorie/',CaloriesAdvisorAPI.as_view(),name='cal')
+    path('checkcalorie/',CaloriesAdvisorAPI,name='cal')
 ]

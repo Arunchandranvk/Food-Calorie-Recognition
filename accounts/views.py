@@ -12,6 +12,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.core.exceptions import ValidationError
 from .utils import *
+from tensorflow.keras.models import load_model
+
 
 
 class CustomAuthToken(ObtainAuthToken):
@@ -54,16 +56,30 @@ class UserCreationView(APIView):
         
 
 
+from tensorflow.keras.models import load_model
+import cv2
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import FoodImage
+from .serializers import FoodImageSerializer
+from .utils import predict_class, predict_volume
 
 
-class CaloriesAdvisorAPI(APIView):
-    def post(self, request):
-        uploaded_file = request.FILES.get('image')
-        if uploaded_file:
-            # Process the uploaded image and extract information
-            image_data = input_image_setup(uploaded_file)
-            response = get_gemini_response(input_prompt, image_data)
-            return Response({'response': response}, status=status.HTTP_200_OK)
+@api_view(['POST'])
+def CaloriesAdvisorAPI(request):
+    if request.method == 'POST' and request.FILES['image']:
+        model = load_model('D:/Internship Luminar/Main Projects/Image Food Recognition/food_recognition.h5', compile=False)
+        image_file = request.FILES['image']
+        img = process_image(image_file)
+        pred_value, cal_data = predict_class(model, img)
+
+        if cal_data is not None:
+            predicted_volume = predict_volume(img)
+            food_image = FoodImage(image=image_file, predicted_food=pred_value, calories_data=cal_data, predicted_volume=predicted_volume)
+            food_image.save()
+            serializer = FoodImageSerializer(food_image)
+            return Response(serializer.data)
         else:
-            return Response({'error': 'No file uploaded'}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": "Not a food item!"}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({"error": "Image file not provided."}, status=status.HTTP_400_BAD_REQUEST)
